@@ -1,0 +1,87 @@
+'use client'
+
+import Sidebar from '@/app/components/Sidebar'
+import Link from 'next/link'
+
+export default function Dashboard() {
+  return (
+    <div className="flex min-h-screen bg-[#faf8f5]">
+      {/* Sidebar */}
+     <Sidebar />
+
+      {/* Main Content */}
+      <main className="lg:ml-72 flex-1 p-4 sm:p-6 md:p-8 lg:p-12 pt-20 lg:pt-12">
+        <div className="mb-8 lg:mb-12">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-light mb-2">Welcome back, Jane</h1>
+          <p className="text-[#3d4451] text-sm sm:text-base">Saturday, February 1, 2026</p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-12">
+          {[
+            { label: 'Tools Used', value: '12', change: '↑ 3 this month', isIncrease: true },
+            { label: 'Hours Saved', value: '24.5', change: '↑ 6.5 vs last month', isIncrease: true },
+            { label: 'Total Logs', value: '47', change: '↑ 8 this week', isIncrease: true },
+            { label: 'Avg Productivity', value: '4.2/5', change: '↑ 0.3 improvement', isIncrease: true }
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-6 lg:p-8 border-l-4 border-[#e8e3dc] hover:border-[#c85a3e] transition">
+              <div className="text-xs text-[#3d4451] uppercase tracking-wide mb-3 font-medium">{stat.label}</div>
+              <div className="text-3xl lg:text-4xl font-serif mb-2 text-[#1a2332]">{stat.value}</div>
+              <div className={`text-sm font-medium ${stat.isIncrease ? 'text-green-600' : 'text-red-600'}`}>
+                {stat.change}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8 lg:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-serif mb-4 lg:mb-6 text-[#1a2332]">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link href="/log-usage">
+              <div className="bg-[#1a2332] text-[#faf8f5] p-6 lg:p-8 hover:bg-[#c85a3e] transition cursor-pointer">
+                <h3 className="text-lg lg:text-xl mb-2 font-medium">Log AI Usage</h3>
+                <p className="text-sm opacity-90 font-light">Record a new teaching activity</p>
+              </div>
+            </Link>
+            <Link href="/tools">
+              <div className="bg-[#1a2332] text-[#faf8f5] p-6 lg:p-8 hover:bg-[#c85a3e] transition cursor-pointer">
+                <h3 className="text-lg lg:text-xl mb-2 font-medium">Browse Tools</h3>
+                <p className="text-sm opacity-90 font-light">Discover new AI resources</p>
+              </div>
+            </Link>
+            <Link href="/reports">
+              <div className="bg-[#1a2332] text-[#faf8f5] p-6 lg:p-8 hover:bg-[#c85a3e] transition cursor-pointer">
+                <h3 className="text-lg lg:text-xl mb-2 font-medium">Generate Report</h3>
+                <p className="text-sm opacity-90 font-light">Create a reflection summary</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white p-4 sm:p-6 lg:p-8">
+          <h2 className="text-2xl sm:text-3xl font-serif mb-4 lg:mb-6 text-[#1a2332]">Recent Activity</h2>
+          {[
+            { tool: 'ChatGPT', course: 'CS101', task: 'Grading', time: '2.5 hours saved', date: '2 hours ago' },
+            { tool: 'Perplexity', course: 'Research Methods', task: 'Content Generation', time: '1 hour saved', date: 'Yesterday' },
+            { tool: 'Grammarly', course: 'Writing 201', task: 'Feedback', time: '3 hours saved', date: '3 days ago' },
+            { tool: 'Notion AI', course: 'Data Science 101', task: 'Lesson Planning', time: '0.5 hours saved', date: '5 days ago' }
+          ].map((activity, i) => (
+            <div key={i} className="flex flex-col sm:flex-row sm:justify-between sm:items-start py-4 lg:py-6 border-b border-[#e8e3dc] last:border-0 hover:pl-2 lg:hover:pl-4 transition-all gap-2 sm:gap-0">
+              <div className="flex-1">
+                <h4 className="font-medium text-[#1a2332] mb-2 text-sm sm:text-base">Used {activity.tool} for {activity.course} {activity.task}</h4>
+                <div className="flex flex-wrap gap-3 sm:gap-6 text-xs sm:text-sm text-[#3d4451]">
+                  <span>{activity.task}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>{activity.time}</span>
+                </div>
+              </div>
+              <div className="text-xs sm:text-sm text-[#7a8b7e] sm:ml-4 shrink-0">{activity.date}</div>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  )
+}

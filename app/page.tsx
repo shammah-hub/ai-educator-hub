@@ -204,7 +204,7 @@ export default function Home() {
               }
             ].map((testimonial, i) => (
               <div key={i} className="bg-[#faf8f5] p-6 sm:p-8 lg:p-10 relative hover:translate-y-[-4px] lg:hover:translate-y-[-8px] transition">
-                <div className="text-5xl sm:text-6xl lg:text-7xl font-serif text-[#c85a3e] opacity-20 absolute top-4 sm:top-6 left-4 sm:left-6">"</div>
+                <div className="text-5xl sm:text-6xl lg:text-7xl font-serif text-[#c85a3e] opacity-20 absolute top-4 sm:top-6 left-4 sm:left-6">&quot;</div>
                 <p className="text-base sm:text-lg text-[#3d4451] mb-6 sm:mb-8 mt-8 sm:mt-12 font-light leading-relaxed italic">
                   {testimonial.quote}
                 </p>
@@ -225,7 +225,7 @@ export default function Home() {
           <div className="text-center mb-12 lg:mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif mb-4 lg:mb-6">About AI Educator Hub</h2>
             <p className="text-base sm:text-lg lg:text-xl text-[#3d4451] font-light max-w-3xl mx-auto leading-relaxed">
-              We're a team of educators, researchers, and technologists united by a common belief: AI in education must be approached with care, ethics, and pedagogical wisdom.
+              We&apos;re a team of educators, researchers, and technologists united by a common belief: AI in education must be approached with care, ethics, and pedagogical wisdom.
             </p>
           </div>
 
@@ -240,7 +240,7 @@ export default function Home() {
             <div className="bg-white p-6 sm:p-10 lg:p-12 border-l-4 border-[#7a8b7e]">
               <h3 className="text-2xl sm:text-3xl font-serif font-semibold mb-4 lg:mb-6 text-[#1a2332]">Our Vision</h3>
               <p className="text-sm sm:text-base lg:text-lg text-[#3d4451] font-light leading-relaxed">
-                A future where every educator has the confidence and resources to harness AI's potential while maintaining the irreplaceable human elements of teaching—empathy, creativity, and critical thinking.
+                A future where every educator has the confidence and resources to harness AI&apos;s potential while maintaining the irreplaceable human elements of teaching—empathy, creativity, and critical thinking.
               </p>
             </div>
           </div>
@@ -284,7 +284,7 @@ export default function Home() {
                 We believe AI should amplify, not replace, the irreplaceable human elements of teaching: empathy, creativity, and critical thinking. Technology is a tool, not a teacher—and the most powerful learning happens in the space between human connection and technological capability.
               </p>
               <p className="text-base sm:text-lg text-[#3d4451] font-light leading-relaxed">
-                Our platform is built on research-backed frameworks from educational psychology, critical pedagogy, and technology ethics. We're committed to helping educators navigate AI integration with intentionality, maintaining agency over their practice while exploring new possibilities.
+	                Our platform is built on research-backed frameworks from educational psychology, critical pedagogy, and technology ethics. We&apos;re committed to helping educators navigate AI integration with intentionality, maintaining agency over their practice while exploring new possibilities.
               </p>
             </div>
           </div>
@@ -293,10 +293,10 @@ export default function Home() {
           <div className="mt-12 lg:mt-20 text-center">
             <h3 className="text-2xl sm:text-3xl lg:text-4xl font-serif mb-4 sm:mb-6">Founded by Educators</h3>
             <p className="text-base sm:text-lg text-[#3d4451] font-light max-w-3xl mx-auto leading-relaxed mb-6 sm:mb-8">
-              AI Educator Hub was born from late-night conversations among teachers grappling with AI's rapid emergence in education. We saw colleagues either rejecting AI entirely or adopting it uncritically—and we knew there had to be a better path.
+	              AI Educator Hub was born from late-night conversations among teachers grappling with AI&apos;s rapid emergence in education. We saw colleagues either rejecting AI entirely or adopting it uncritically—and we knew there had to be a better path.
             </p>
             <p className="text-base sm:text-lg text-[#3d4451] font-light max-w-3xl mx-auto leading-relaxed">
-              Today, we're a global community of over 12,000 educators committed to that middle path: thoughtful, ethical, and pedagogically sound AI integration.
+	              Today, we&apos;re a global community of over 12,000 educators committed to that middle path: thoughtful, ethical, and pedagogically sound AI integration.
             </p>
           </div>
         </div>
@@ -390,7 +390,7 @@ export default function Home() {
               <li><a href="#features" className="hover:text-[#c85a3e] transition">Features</a></li>
               <li><a href="#how-it-works" className="hover:text-[#c85a3e] transition">How It Works</a></li>
               <li><a href="/pricing" className="hover:text-[#c85a3e] transition">Pricing</a></li>
-              <li><a href="/tools" className="hover:text-[#c85a3e] transition">AI Tools Directory</a></li>
+              <li><Link href="/tools" className="hover:text-[#c85a3e] transition">AI Tools Directory</Link></li>
             </ul>
           </div>
           <div>

@@ -1,13 +1,42 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Clock, AlertCircle } from 'lucide-react'
+import { apiRequest, ApiError } from '../lib/api'
+import { useAuth } from '../lib/auth'
+import type { Tool, UsageLog } from '../lib/types'
+import Loader from './Loader'
 
 interface LogFormProps {
   preselectedTool?: string
+  logId?: string
 }
 
-export default function LogForm({ preselectedTool }: LogFormProps) {
+const tasks = [
+  'grading',
+  'lesson-planning',
+  'feedback',
+  'content-creation',
+  'research',
+  'administrative',
+  'student-support',
+  'assessment-design',
+] as const
+
+const ethicalConcernOptions = [
+  'bias',
+  'privacy',
+  'transparency',
+  'accuracy',
+  'plagiarism',
+  'student-autonomy',
+  'data-security',
+] as const
+
+export default function LogForm({ preselectedTool, logId }: LogFormProps) {
+  const router = useRouter()
+  const { token } = useAuth()
   const [formData, setFormData] = useState({
     toolId: preselectedTool || '',
     course: '',
@@ -18,33 +47,114 @@ export default function LogForm({ preselectedTool }: LogFormProps) {
     ethicalConcerns: [] as string[],
     notes: '',
   })
-  
-  const tasks = [
-    'grading',
-    'lesson-planning',
-    'feedback',
-    'content-creation',
-    'research',
-    'administrative',
-    'student-support',
-    'assessment-design',
-  ]
-  
-  const ethicalConcernOptions = [
-    'bias',
-    'privacy',
-    'transparency',
-    'accuracy',
-    'plagiarism',
-    'student-autonomy',
-    'data-security',
-  ]
-  
-  const handleSubmit = (e: React.FormEvent) => {
+  const [tools, setTools] = useState<Tool[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!token) {
+      return
+    }
+
+    let isMounted = true
+
+    const loadData = async () => {
+      setIsLoading(true)
+      setError('')
+
+      try {
+        const [toolsResponse, logResponse] = await Promise.all([
+          apiRequest<{ items: Tool[] }>('/tools', { token }),
+          logId ? apiRequest<UsageLog>(`/usage-logs/${logId}`, { token }) : Promise.resolve(null),
+        ])
+
+        if (!isMounted) {
+          return
+        }
+
+        setTools(toolsResponse.items)
+
+        if (logResponse) {
+          setFormData({
+            toolId: logResponse.tool.id,
+            course: logResponse.course,
+            task: logResponse.task,
+            hoursSaved: String(logResponse.hoursSaved),
+            hoursAdded: String(logResponse.hoursAdded),
+            workloadImpact: logResponse.workloadImpact,
+            ethicalConcerns: logResponse.ethicalConcerns,
+            notes: logResponse.notes,
+          })
+        } else if (preselectedTool) {
+          const matchedTool = toolsResponse.items.find(
+            (tool) => tool.id === preselectedTool || tool.slug === preselectedTool,
+          )
+
+          if (matchedTool) {
+            setFormData((current) => ({
+              ...current,
+              toolId: matchedTool.id,
+            }))
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof ApiError ? err.message : 'Unable to load form data.')
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [token, preselectedTool, logId])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    // Handle form submission
-    alert('Usage logged successfully!')
+    if (!token) {
+      return
+    }
+
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      const payload = {
+        toolId: formData.toolId,
+        course: formData.course,
+        task: formData.task,
+        hoursSaved: Number(formData.hoursSaved),
+        hoursAdded: Number(formData.hoursAdded || 0),
+        workloadImpact: formData.workloadImpact,
+        ethicalConcerns: formData.ethicalConcerns,
+        notes: formData.notes,
+      }
+
+      const savedLog = logId
+        ? await apiRequest<UsageLog>(`/usage-logs/${logId}`, {
+            method: 'PATCH',
+            token,
+            body: JSON.stringify(payload),
+          })
+        : await apiRequest<UsageLog>('/usage-logs', {
+            method: 'POST',
+            token,
+            body: JSON.stringify(payload),
+          })
+
+      router.push(logId ? '/my-logs' : `/reflect/${savedLog.id}`)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to save your usage log.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
   
   const handleEthicalConcernToggle = (concern: string) => {
@@ -55,9 +165,19 @@ export default function LogForm({ preselectedTool }: LogFormProps) {
         : [...prev.ethicalConcerns, concern]
     }))
   }
+
+  if (isLoading) {
+    return <Loader text={logId ? 'Loading log...' : 'Loading form...'} />
+  }
   
   return (
     <form onSubmit={handleSubmit} className="space-y-5 lg:space-y-6">
+      {error && (
+        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <div>
           <label className="label">AI Tool Used</label>
@@ -68,10 +188,11 @@ export default function LogForm({ preselectedTool }: LogFormProps) {
             required
           >
             <option value="">Select a tool</option>
-            <option value="chatgpt">ChatGPT</option>
-            <option value="claude">Claude</option>
-            <option value="grammarly">Grammarly</option>
-            <option value="turnitin">Turnitin</option>
+            {tools.map((tool) => (
+              <option key={tool.id} value={tool.id}>
+                {tool.name}
+              </option>
+            ))}
           </select>
         </div>
         
@@ -195,10 +316,14 @@ export default function LogForm({ preselectedTool }: LogFormProps) {
       </div>
       
       <div className="flex flex-col sm:flex-row gap-3">
-        <button type="submit" className="btn-primary flex-1 text-sm sm:text-base py-3 lg:py-3.5">
-          Save Usage Log
+        <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 text-sm sm:text-base py-3 lg:py-3.5 disabled:opacity-60">
+          {isSubmitting ? 'Saving...' : logId ? 'Update Usage Log' : 'Save Usage Log'}
         </button>
-        <button type="button" className="btn-ghost sm:w-auto text-sm sm:text-base py-3 lg:py-3.5">
+        <button
+          type="button"
+          onClick={() => router.push(logId ? '/my-logs' : '/dashboard')}
+          className="btn-ghost sm:w-auto text-sm sm:text-base py-3 lg:py-3.5"
+        >
           Cancel
         </button>
       </div>

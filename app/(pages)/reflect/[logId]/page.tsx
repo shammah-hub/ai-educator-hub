@@ -2,11 +2,99 @@
 
 import Sidebar from '@/app/components/Sidebar'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import Loader from '@/app/components/Loader'
+import { apiRequest, ApiError } from '@/app/lib/api'
+import { useRequireAuth } from '@/app/lib/use-require-auth'
+import type { Reflection, UsageLog } from '@/app/lib/types'
 
 export default function Reflect() {
-  const searchParams = useSearchParams()
-  const logId = searchParams.get('logId') || '1'
+  const auth = useRequireAuth()
+  const router = useRouter()
+  const params = useParams<{ logId: string }>()
+  const logId = params.logId
+  const [log, setLog] = useState<UsageLog | null>(null)
+  const [formData, setFormData] = useState({
+    autonomyRating: '',
+    ethicsRating: '',
+    productivityRating: '',
+    surprises: '',
+    futureAdjustments: '',
+    additionalComments: '',
+  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!auth.token || !logId) {
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+
+    Promise.all([
+      apiRequest<UsageLog>(`/usage-logs/${logId}`, { token: auth.token }),
+      apiRequest<Reflection | null>(`/usage-logs/${logId}/reflection`, { token: auth.token }),
+    ])
+      .then(([logResponse, reflectionResponse]) => {
+        setLog(logResponse)
+
+        if (reflectionResponse) {
+          setFormData({
+            autonomyRating: String(reflectionResponse.autonomyRating),
+            ethicsRating: String(reflectionResponse.ethicsRating),
+            productivityRating: String(reflectionResponse.productivityRating),
+            surprises: reflectionResponse.surprises,
+            futureAdjustments: reflectionResponse.futureAdjustments,
+            additionalComments: reflectionResponse.additionalComments,
+          })
+        }
+      })
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : 'Unable to load reflection data.')
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [auth.token, logId])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!auth.token || !logId) {
+      return
+    }
+
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      await apiRequest(`/usage-logs/${logId}/reflection`, {
+        method: 'PUT',
+        token: auth.token,
+        body: JSON.stringify({
+          autonomyRating: Number(formData.autonomyRating),
+          ethicsRating: Number(formData.ethicsRating),
+          productivityRating: Number(formData.productivityRating),
+          surprises: formData.surprises,
+          futureAdjustments: formData.futureAdjustments,
+          additionalComments: formData.additionalComments,
+        }),
+      })
+
+      router.push('/my-logs')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to save reflection.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (auth.isLoading || !auth.token || isLoading) {
+    return <Loader text="Loading reflection..." className="min-h-screen" />
+  }
 
   return (
     <div className="flex min-h-screen bg-[#faf8f5]">
@@ -19,12 +107,22 @@ export default function Reflect() {
           <p className="text-base sm:text-lg lg:text-xl text-[#3d4451] font-light">Reflect on your AI usage experience</p>
         </div>
 
-        <form className="bg-white p-6 sm:p-8 lg:p-12" onSubmit={(e) => { e.preventDefault(); alert('Reflection saved!'); window.location.href = '/my-logs' }}>
+        <form className="bg-white p-6 sm:p-8 lg:p-12" onSubmit={handleSubmit}>
           <div className="mb-6 lg:mb-8 p-4 sm:p-6 bg-[#faf8f5] border-l-4 border-[#7a8b7e]">
-            <div className="text-xs sm:text-sm text-[#3d4451] mb-2">You're reflecting on:</div>
-            <div className="font-semibold text-[#1a2332] text-base sm:text-lg">ChatGPT for CS101 Grading</div>
-            <div className="text-xs sm:text-sm text-[#7a8b7e] mt-1">Logged on Feb 1, 2026</div>
+            <div className="text-xs sm:text-sm text-[#3d4451] mb-2">You&apos;re reflecting on:</div>
+            <div className="font-semibold text-[#1a2332] text-base sm:text-lg">
+              {log ? `${log.tool.name} for ${log.course} ${log.task.replace(/-/g, ' ')}` : 'Usage log'}
+            </div>
+            <div className="text-xs sm:text-sm text-[#7a8b7e] mt-1">
+              {log ? `Logged on ${new Date(log.usedAt).toLocaleDateString()}` : ''}
+            </div>
           </div>
+
+          {error && (
+            <div className="mb-6 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           {/* Autonomy Rating */}
           <div className="mb-8 lg:mb-12">
@@ -44,6 +142,8 @@ export default function Reflect() {
                       type="radio"
                       name="autonomy"
                       value={rating}
+                      checked={formData.autonomyRating === String(rating)}
+                      onChange={(e) => setFormData((current) => ({ ...current, autonomyRating: e.target.value }))}
                       required
                       className="w-5 h-5 sm:w-6 sm:h-6"
                     />
@@ -72,6 +172,8 @@ export default function Reflect() {
                       type="radio"
                       name="ethics"
                       value={rating}
+                      checked={formData.ethicsRating === String(rating)}
+                      onChange={(e) => setFormData((current) => ({ ...current, ethicsRating: e.target.value }))}
                       required
                       className="w-5 h-5 sm:w-6 sm:h-6"
                     />
@@ -100,6 +202,8 @@ export default function Reflect() {
                       type="radio"
                       name="productivity"
                       value={rating}
+                      checked={formData.productivityRating === String(rating)}
+                      onChange={(e) => setFormData((current) => ({ ...current, productivityRating: e.target.value }))}
                       required
                       className="w-5 h-5 sm:w-6 sm:h-6"
                     />
@@ -121,6 +225,8 @@ export default function Reflect() {
               <textarea
                 className="w-full px-4 py-3 lg:py-4 border border-[#e8e3dc] bg-[#faf8f5] focus:outline-none focus:border-[#7a8b7e] focus:ring-4 focus:ring-[#7a8b7e]/10 min-h-32 text-sm sm:text-base"
                 placeholder="Reflect on unexpected outcomes, challenges, or insights..."
+                value={formData.surprises}
+                onChange={(e) => setFormData((current) => ({ ...current, surprises: e.target.value }))}
               ></textarea>
             </div>
 
@@ -131,6 +237,8 @@ export default function Reflect() {
               <textarea
                 className="w-full px-4 py-3 lg:py-4 border border-[#e8e3dc] bg-[#faf8f5] focus:outline-none focus:border-[#7a8b7e] focus:ring-4 focus:ring-[#7a8b7e]/10 min-h-32 text-sm sm:text-base"
                 placeholder="Consider what you'd do differently next time..."
+                value={formData.futureAdjustments}
+                onChange={(e) => setFormData((current) => ({ ...current, futureAdjustments: e.target.value }))}
               ></textarea>
             </div>
 
@@ -141,6 +249,8 @@ export default function Reflect() {
               <textarea
                 className="w-full px-4 py-3 lg:py-4 border border-[#e8e3dc] bg-[#faf8f5] focus:outline-none focus:border-[#7a8b7e] focus:ring-4 focus:ring-[#7a8b7e]/10 min-h-32 text-sm sm:text-base"
                 placeholder="Any other thoughts or observations..."
+                value={formData.additionalComments}
+                onChange={(e) => setFormData((current) => ({ ...current, additionalComments: e.target.value }))}
               ></textarea>
             </div>
           </div>
@@ -152,8 +262,8 @@ export default function Reflect() {
                 Skip Reflection
               </button>
             </Link>
-            <button type="submit" className="flex-1 py-4 lg:py-5 bg-[#1a2332] text-[#faf8f5] font-medium hover:bg-[#c85a3e] transition text-sm sm:text-base">
-              Save Reflection
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-4 lg:py-5 bg-[#1a2332] text-[#faf8f5] font-medium hover:bg-[#c85a3e] transition text-sm sm:text-base disabled:cursor-not-allowed disabled:opacity-60">
+              {isSubmitting ? 'Saving...' : 'Save Reflection'}
             </button>
           </div>
         </form>

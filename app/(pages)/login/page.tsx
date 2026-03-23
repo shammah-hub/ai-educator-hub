@@ -1,11 +1,39 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { ApiError } from '@/app/lib/api'
+import { useAuth } from '@/app/lib/auth'
 
 export default function Login() {
+  const router = useRouter()
+  const { login, token, isLoading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!authLoading && token) {
+      router.replace('/dashboard')
+    }
+  }, [authLoading, token, router])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      await login({ email, password })
+      router.replace('/dashboard')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to sign in right now.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
@@ -43,7 +71,7 @@ export default function Login() {
           {/* Decorative quote or feature highlight */}
           <div className="mt-8 lg:mt-16 pt-6 lg:pt-8 border-t border-[#7a8b7e]/20 max-w-lg hidden sm:block">
             <p className="text-[#e8e3dc]/70 text-sm font-light italic leading-relaxed">
-              "This platform transformed how I think about AI in my classroom. It's not just about efficiency—it's about intentionality."
+              &ldquo;This platform transformed how I think about AI in my classroom. It&rsquo;s not just about efficiency, it&rsquo;s about intentionality.&rdquo;
             </p>
             <p className="text-[#7a8b7e] text-sm mt-3">— Dr. Sarah Martinez, Professor of Education</p>
           </div>
@@ -60,7 +88,7 @@ export default function Login() {
           <h2 className="text-3xl sm:text-4xl font-serif mb-3 lg:mb-4 text-[#1a2332]">Sign In</h2>
           <p className="text-[#3d4451] mb-8 lg:mb-12 font-light text-sm sm:text-base">Access your educator dashboard</p>
 
-          <form onSubmit={(e) => { e.preventDefault(); window.location.href = '/dashboard' }}>
+          <form onSubmit={handleSubmit}>
             <div className="mb-5 lg:mb-6">
               <label className="block text-sm font-medium text-[#3d4451] mb-2">Email Address</label>
               <input
@@ -88,8 +116,18 @@ export default function Login() {
               </div>
             </div>
 
-            <button type="submit" className="w-full py-4 lg:py-5 bg-[#1a2332] text-[#faf8f5] font-medium hover:bg-[#c85a3e] transition mt-6 lg:mt-8 text-sm sm:text-base">
-              Sign In
+            {error && (
+              <div className="mb-4 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-6 w-full bg-[#1a2332] py-4 text-sm font-medium text-[#faf8f5] transition hover:bg-[#c85a3e] disabled:cursor-not-allowed disabled:opacity-60 sm:text-base lg:mt-8 lg:py-5"
+            >
+              {isSubmitting ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 
@@ -99,18 +137,18 @@ export default function Login() {
             <div className="flex-1 h-px bg-[#e8e3dc]"></div>
           </div>
 
-          <button className="w-full py-4 lg:py-5 bg-white border border-[#e8e3dc] font-medium hover:bg-[#faf8f5] transition flex items-center justify-center gap-3 text-sm sm:text-base">
+          <button className="flex w-full items-center justify-center gap-3 border border-[#e8e3dc] bg-white py-4 text-sm font-medium transition hover:bg-[#faf8f5] sm:text-base lg:py-5">
             <svg width="18" height="18" viewBox="0 0 20 20" className="sm:w-5 sm:h-5">
               <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
               <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
               <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
               <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
             </svg>
-            Sign in with Google
+            Google login is not in the MVP
           </button>
 
           <div className="text-center mt-6 lg:mt-8 text-[#3d4451] text-sm sm:text-base">
-            Don't have an account? <Link href="/signup" className="text-[#c85a3e] font-medium hover:underline">Sign up</Link>
+            Don&apos;t have an account? <Link href="/signup" className="text-[#c85a3e] font-medium hover:underline">Sign up</Link>
           </div>
         </div>
       </div>

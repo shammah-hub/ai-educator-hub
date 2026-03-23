@@ -1,12 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useAuth } from '../lib/auth'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
+  const { user, logout } = useAuth()
 
   const navItems = [
     { 
@@ -52,6 +55,11 @@ export default function Sidebar() {
       </svg>
     }
   ]
+
+  const handleLogout = () => {
+    logout()
+    router.replace('/login')
+  }
 
   return (
     <>
@@ -123,13 +131,20 @@ export default function Sidebar() {
         <div className="p-8 border-t border-white/10 flex-shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-[#c85a3e] flex items-center justify-center text-white font-semibold">
-              JD
+              {user?.initials ?? 'AE'}
             </div>
             <div>
-              <div className="text-[#faf8f5] font-medium text-sm">Dr. Jane Doe</div>
-              <div className="text-[#e8e3dc] text-xs">Computer Science</div>
+              <div className="text-[#faf8f5] font-medium text-sm">{user?.fullName ?? 'AI Educator'}</div>
+              <div className="text-[#e8e3dc] text-xs">{user?.department ?? 'Educator'}</div>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-4 w-full border border-white/10 px-4 py-2 text-sm text-[#e8e3dc] transition hover:bg-white/10 hover:text-white"
+          >
+            Sign Out
+          </button>
         </div>
       </aside>
     </>

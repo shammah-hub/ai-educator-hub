@@ -28,3 +28,12 @@ Create a `.env.local` file from [.env.example](/Users/appp/Documents/CODE/Master
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api
 ```
+
+## Masters documentation
+
+Dissertation-oriented drafts are available in [docs/README.md](/Users/appp/Documents/CODE/Masters/ai-educator-hub/docs/README.md).
+
+Included chapters:
+
+- [Chapter 4: System Implementation](/Users/appp/Documents/CODE/Masters/ai-educator-hub/docs/chapter-4-system-implementation.md)
+- [Chapter 5: Evaluation and Conclusion](/Users/appp/Documents/CODE/Masters/ai-educator-hub/docs/chapter-5-evaluation-and-conclusion.md)

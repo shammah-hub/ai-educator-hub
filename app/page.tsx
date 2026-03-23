@@ -298,6 +298,9 @@ export default function Home() {
                 Covers architecture, module design, database schema structure, API workflow, implementation strategy,
                 integration details, and deployment setup for the developed system.
               </p>
+              <div className="mt-5 font-mono text-xs text-[#7a8b7e]">
+                docs/chapter-4-system-implementation.md
+              </div>
             </div>
             <div className="bg-[#faf8f5] p-8 border border-[#d9d0c4]">
               <div className="text-xs uppercase tracking-[0.25em] text-[#c85a3e]">Chapter 5</div>
@@ -306,6 +309,9 @@ export default function Home() {
                 Summarizes system outcomes, test observations, limitations, research implications, recommendations,
                 and the final conclusion of the project.
               </p>
+              <div className="mt-5 font-mono text-xs text-[#7a8b7e]">
+                docs/chapter-5-evaluation-and-conclusion.md
+              </div>
             </div>
           </div>
         </div>

@@ -2,8 +2,10 @@
 
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
+type ChartDatum = Record<string, string | number>
+
 interface ChartProps {
-  data?: any[]
+  data?: number[] | ChartDatum[]
   type?: 'line' | 'bar'
   xKey?: string
   yKey?: string
@@ -23,12 +25,14 @@ export default function Chart({
   labels 
 }: ChartProps) {
   // Handle simple array format (data as numbers[], labels as strings[])
-  let chartData = data
+  let chartData: ChartDatum[] | undefined
   if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'number' && labels) {
-    chartData = data.map((value, i) => ({
+    chartData = (data as number[]).map((value, i) => ({
       [xKey]: labels[i],
       [yKey]: value
     }))
+  } else {
+    chartData = data as ChartDatum[] | undefined
   }
 
   const ChartComponent = type === 'line' ? LineChart : BarChart

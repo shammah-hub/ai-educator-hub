@@ -1,11 +1,43 @@
 'use client'
 
 import Chart from '@/app/components/Chart'
+import Loader from '@/app/components/Loader'
 import Sidebar from '@/app/components/Sidebar'
-
-
+import { useEffect, useMemo, useState } from 'react'
+import { apiRequest, ApiError } from '@/app/lib/api'
+import { useRequireAuth } from '@/app/lib/use-require-auth'
+import type { InsightsSummary } from '@/app/lib/types'
 
 export default function Insights() {
+  const auth = useRequireAuth()
+  const [data, setData] = useState<InsightsSummary | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!auth.token) {
+      return
+    }
+
+    void apiRequest<InsightsSummary>('/insights/summary', { token: auth.token })
+      .then(setData)
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : 'Unable to load insights.')
+      })
+  }, [auth.token])
+
+  const chartValues = useMemo(
+    () => data?.hoursSavedOverTime.map((item) => item.hours) ?? [],
+    [data],
+  )
+  const chartLabels = useMemo(
+    () => data?.hoursSavedOverTime.map((item) => item.period) ?? [],
+    [data],
+  )
+
+  if (auth.isLoading || !auth.token || (!data && !error)) {
+    return <Loader text="Loading insights..." className="min-h-screen" />
+  }
+
   return (
     <div className="flex min-h-screen bg-[#faf8f5]">
       <Sidebar />
@@ -17,26 +49,32 @@ export default function Insights() {
           <p className="text-base sm:text-lg lg:text-xl text-[#3d4451] font-light">Analytics and trends from your AI tool usage</p>
         </div>
 
+        {error && (
+          <div className="mb-6 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Summary Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-12">
           <div className="bg-white p-5 lg:p-6 border-l-4 border-emerald-500 hover:shadow-lg transition">
             <div className="text-xs sm:text-sm text-[#3d4451] mb-2">Total Hours Saved</div>
-            <div className="text-3xl lg:text-4xl font-serif font-semibold text-emerald-600 mb-1">24.5</div>
-            <div className="text-xs text-[#7a8b7e]">This month</div>
+            <div className="text-3xl lg:text-4xl font-serif font-semibold text-emerald-600 mb-1">{data?.summary.totalHoursSaved ?? 0}</div>
+            <div className="text-xs text-[#7a8b7e]">{data?.summary.totalLogs ?? 0} total logs</div>
           </div>
           <div className="bg-white p-5 lg:p-6 border-l-4 border-[#c85a3e] hover:shadow-lg transition">
             <div className="text-xs sm:text-sm text-[#3d4451] mb-2">Most Used Tool</div>
-            <div className="text-2xl lg:text-3xl font-serif font-semibold text-[#1a2332] mb-1">ChatGPT</div>
-            <div className="text-xs text-[#7a8b7e]">15 logs</div>
+            <div className="text-2xl lg:text-3xl font-serif font-semibold text-[#1a2332] mb-1">{data?.summary.mostUsedTool ?? 'No data'}</div>
+            <div className="text-xs text-[#7a8b7e]">{data?.mostUsedTools[0]?.count ?? 0} logs</div>
           </div>
           <div className="bg-white p-5 lg:p-6 border-l-4 border-[#7a8b7e] hover:shadow-lg transition">
             <div className="text-xs sm:text-sm text-[#3d4451] mb-2">Top Task</div>
-            <div className="text-2xl lg:text-3xl font-serif font-semibold text-[#1a2332] mb-1">Grading</div>
-            <div className="text-xs text-[#7a8b7e]">40% of usage</div>
+            <div className="text-2xl lg:text-3xl font-serif font-semibold text-[#1a2332] mb-1">{data?.summary.topTask?.replace(/-/g, ' ') ?? 'No data'}</div>
+            <div className="text-xs text-[#7a8b7e]">{data?.taskBreakdown[0]?.count ?? 0} entries</div>
           </div>
           <div className="bg-white p-5 lg:p-6 border-l-4 border-amber-500 hover:shadow-lg transition">
             <div className="text-xs sm:text-sm text-[#3d4451] mb-2">Avg Impact</div>
-            <div className="text-3xl lg:text-4xl font-serif font-semibold text-amber-600 mb-1">4.2/5</div>
+            <div className="text-3xl lg:text-4xl font-serif font-semibold text-amber-600 mb-1">{data?.summary.averageProductivity ?? 0}/5</div>
             <div className="text-xs text-[#7a8b7e]">Productivity score</div>
           </div>
         </div>
@@ -54,8 +92,8 @@ export default function Insights() {
           </div>
           <div className="overflow-x-auto">
             <Chart 
-              data={[5, 8, 6, 10, 7, 12, 9, 11]} 
-              labels={['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8']}
+              data={chartValues} 
+              labels={chartLabels}
               color="#7a8b7e"
             />
           </div>
@@ -65,28 +103,29 @@ export default function Insights() {
           {/* Tools Usage Breakdown */}
           <div className="bg-white p-5 sm:p-6 lg:p-8 rounded-lg border border-[#e8e3dc]">
             <h2 className="text-2xl lg:text-3xl font-serif mb-6 lg:mb-8 text-[#1a2332]">Most Used Tools</h2>
-            {[
-              { name: 'ChatGPT', count: 15, percent: 40, color: '#c85a3e' },
-              { name: 'Grammarly', count: 12, percent: 32, color: '#7a8b7e' },
-              { name: 'Perplexity AI', count: 8, percent: 21, color: '#10b981' },
-              { name: 'Notion AI', count: 3, percent: 7, color: '#f59e0b' }
-            ].map((tool, i) => (
-              <div key={i} className="mb-6 lg:mb-8 last:mb-0">
-                <div className="flex justify-between mb-2 lg:mb-3">
-                  <span className="font-semibold text-[#1a2332] text-base lg:text-lg">{tool.name}</span>
-                  <div className="text-right">
-                    <span className="text-[#3d4451] font-medium text-sm lg:text-base">{tool.count} logs</span>
-                    <span className="text-[#7a8b7e] text-xs lg:text-sm ml-2">({tool.percent}%)</span>
+            {data?.mostUsedTools.length ? data.mostUsedTools.map((tool, i) => {
+              const percent = data.summary.totalLogs ? Math.round((tool.count / data.summary.totalLogs) * 100) : 0
+              const colors = ['#c85a3e', '#7a8b7e', '#10b981', '#f59e0b', '#1a2332']
+              return (
+                <div key={i} className="mb-6 lg:mb-8 last:mb-0">
+                  <div className="flex justify-between mb-2 lg:mb-3">
+                    <span className="font-semibold text-[#1a2332] text-base lg:text-lg">{tool.name}</span>
+                    <div className="text-right">
+                      <span className="text-[#3d4451] font-medium text-sm lg:text-base">{tool.count} logs</span>
+                      <span className="text-[#7a8b7e] text-xs lg:text-sm ml-2">({percent}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-[#e8e3dc] h-2 lg:h-3 rounded-full overflow-hidden">
+                    <div
+                      className="h-2 lg:h-3 transition-all duration-500 rounded-full"
+                      style={{ width: `${percent}%`, backgroundColor: colors[i % colors.length] }}
+                    ></div>
                   </div>
                 </div>
-                <div className="w-full bg-[#e8e3dc] h-2 lg:h-3 rounded-full overflow-hidden">
-                  <div 
-                    className="h-2 lg:h-3 transition-all duration-500 rounded-full" 
-                    style={{ width: `${tool.percent}%`, backgroundColor: tool.color }}
-                  ></div>
-                </div>
-              </div>
-            ))}
+              )
+            }) : (
+              <div className="text-sm text-[#3d4451]">No tool usage data yet.</div>
+            )}
           </div>
 
           {/* Workload Impact */}
@@ -94,22 +133,22 @@ export default function Insights() {
             <h2 className="text-2xl lg:text-3xl font-serif mb-6 lg:mb-8 text-[#1a2332]">Workload Impact</h2>
             <div className="flex items-center justify-center h-40 sm:h-48 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg mb-4 lg:mb-6">
               <div className="text-center">
-                <div className="text-5xl sm:text-6xl lg:text-7xl font-serif text-emerald-600 mb-2">85%</div>
+                <div className="text-5xl sm:text-6xl lg:text-7xl font-serif text-emerald-600 mb-2">{data?.workloadImpact.positivePercent ?? 0}%</div>
                 <div className="text-[#1a2332] font-medium text-base lg:text-lg">Positive Impact</div>
-                <div className="text-xs sm:text-sm text-[#3d4451] mt-2">Based on 47 logs</div>
+                <div className="text-xs sm:text-sm text-[#3d4451] mt-2">Based on {data?.summary.totalLogs ?? 0} logs</div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3 lg:gap-4">
               <div className="text-center p-3 lg:p-5 bg-emerald-50 rounded-lg border border-emerald-200">
-                <div className="text-2xl lg:text-3xl font-serif text-emerald-600 mb-1 lg:mb-2">40</div>
+                <div className="text-2xl lg:text-3xl font-serif text-emerald-600 mb-1 lg:mb-2">{data?.workloadImpact.positive ?? 0}</div>
                 <div className="text-[10px] lg:text-xs font-semibold text-emerald-700 uppercase tracking-wide">Positive</div>
               </div>
               <div className="text-center p-3 lg:p-5 bg-amber-50 rounded-lg border border-amber-200">
-                <div className="text-2xl lg:text-3xl font-serif text-amber-600 mb-1 lg:mb-2">5</div>
+                <div className="text-2xl lg:text-3xl font-serif text-amber-600 mb-1 lg:mb-2">{data?.workloadImpact.neutral ?? 0}</div>
                 <div className="text-[10px] lg:text-xs font-semibold text-amber-700 uppercase tracking-wide">Neutral</div>
               </div>
               <div className="text-center p-3 lg:p-5 bg-rose-50 rounded-lg border border-rose-200">
-                <div className="text-2xl lg:text-3xl font-serif text-rose-600 mb-1 lg:mb-2">2</div>
+                <div className="text-2xl lg:text-3xl font-serif text-rose-600 mb-1 lg:mb-2">{data?.workloadImpact.negative ?? 0}</div>
                 <div className="text-[10px] lg:text-xs font-semibold text-rose-700 uppercase tracking-wide">Negative</div>
               </div>
             </div>
@@ -120,20 +159,17 @@ export default function Insights() {
         <div className="bg-white p-5 sm:p-6 lg:p-8 mb-6 lg:mb-8 rounded-lg border border-[#e8e3dc]">
           <h2 className="text-2xl lg:text-3xl font-serif mb-6 lg:mb-8 text-[#1a2332]">Tasks Breakdown</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-            {[
-              { task: 'Grading', count: 19, color: 'emerald' },
-              { task: 'Content Creation', count: 12, color: 'blue' },
-              { task: 'Feedback', count: 10, color: 'purple' },
-              { task: 'Lesson Planning', count: 6, color: 'amber' }
-            ].map((item, i) => (
+            {data?.taskBreakdown.length ? data.taskBreakdown.map((item, i) => (
               <div key={i} className="p-4 lg:p-6 bg-[#faf8f5] rounded-lg hover:bg-[#e8e3dc] transition text-center border border-[#e8e3dc]">
                 <div className="text-xl lg:text-2xl font-serif font-semibold text-[#1a2332] mb-1">{item.count}</div>
-                <div className="text-xs lg:text-sm text-[#3d4451]">{item.task}</div>
+                <div className="text-xs lg:text-sm text-[#3d4451]">{item.task.replace(/-/g, ' ')}</div>
                 <div className="mt-3 h-2 bg-[#e8e3dc] rounded-full">
-                  <div className={`h-2 rounded-full bg-${item.color}-500`} style={{ width: `${(item.count / 19) * 100}%` }}></div>
+                  <div className="h-2 rounded-full bg-[#7a8b7e]" style={{ width: `${data?.taskBreakdown[0]?.count ? (item.count / data.taskBreakdown[0].count) * 100 : 0}%` }}></div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full text-sm text-[#3d4451]">No task breakdown data yet.</div>
+            )}
           </div>
         </div>
 
@@ -149,18 +185,22 @@ export default function Insights() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-8">
             <div className="bg-white/10 p-5 lg:p-6 rounded-lg backdrop-blur-sm">
               <div className="text-xs lg:text-sm opacity-75 mb-2">Your Hours Saved</div>
-              <div className="text-4xl lg:text-5xl font-serif mb-1">24.5</div>
-              <div className="text-xs lg:text-sm opacity-75">hrs this month</div>
+              <div className="text-4xl lg:text-5xl font-serif mb-1">{data?.peerComparison.myAverageHoursPerLog ?? 0}</div>
+              <div className="text-xs lg:text-sm opacity-75">avg hrs per log</div>
             </div>
             <div className="bg-white/10 p-5 lg:p-6 rounded-lg backdrop-blur-sm">
               <div className="text-xs lg:text-sm opacity-75 mb-2">Peer Average</div>
-              <div className="text-4xl lg:text-5xl font-serif mb-1">18.2</div>
-              <div className="text-xs lg:text-sm opacity-75">hrs this month</div>
+              <div className="text-4xl lg:text-5xl font-serif mb-1">{data?.peerComparison.peerAverageHoursPerLog ?? 0}</div>
+              <div className="text-xs lg:text-sm opacity-75">avg hrs per log</div>
             </div>
             <div className="bg-emerald-500/20 p-5 lg:p-6 rounded-lg border-2 border-emerald-500/50">
               <div className="text-xs lg:text-sm opacity-75 mb-2">Your Performance</div>
-              <div className="text-4xl lg:text-5xl font-serif text-emerald-400 mb-1">+35%</div>
-              <div className="text-xs lg:text-sm text-emerald-300">Above average</div>
+              <div className="text-4xl lg:text-5xl font-serif text-emerald-400 mb-1">
+                {`${(data?.peerComparison.performanceDeltaPercent ?? 0) >= 0 ? '+' : ''}${data?.peerComparison.performanceDeltaPercent ?? 0}%`}
+              </div>
+              <div className="text-xs lg:text-sm text-emerald-300">
+                {(data?.peerComparison.performanceDeltaPercent ?? 0) >= 0 ? 'Above average' : 'Below average'}
+              </div>
             </div>
           </div>
         </div>

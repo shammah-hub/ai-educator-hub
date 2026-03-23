@@ -283,6 +283,37 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="bg-[#faf8f5] px-4 pb-16 sm:px-8 sm:pb-24 lg:px-16 lg:pb-32">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10">
+            <div className="mb-3 text-xs uppercase tracking-[0.3em] text-[#7a8b7e]">Academic Contribution</div>
+            <h2 className="text-3xl font-serif sm:text-4xl lg:text-5xl">What this project contributes</h2>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            {[
+              {
+                title: 'Practical Artefact',
+                text: 'A working full-stack system rather than a conceptual proposal, allowing direct demonstration and future empirical validation.',
+              },
+              {
+                title: 'Reflective Framework',
+                text: 'A workflow that combines operational logging with ethical and pedagogical reflection instead of measuring efficiency alone.',
+              },
+              {
+                title: 'Extensible Foundation',
+                text: 'A modular architecture that can be expanded into institutional analytics, formal user studies, and richer reporting workflows.',
+              },
+            ].map((item) => (
+              <div key={item.title} className="border border-[#d9d0c4] bg-white p-7">
+                <h3 className="text-2xl font-serif">{item.title}</h3>
+                <p className="mt-4 text-sm leading-relaxed text-[#3d4451]">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="docs" className="bg-[#e6ddd2] px-4 py-16 sm:px-8 sm:py-24 lg:px-16 lg:py-32">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 lg:mb-16">

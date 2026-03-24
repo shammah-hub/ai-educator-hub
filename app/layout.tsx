@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Educator Hub",
-  description: "Track, reflect on, and analyze AI usage in teaching.",
+  title: "AI Educator Hub | Masters Project",
+  description: "A masters project on reflective and ethical AI adoption in teaching.",
 };
 
 export default function RootLayout({
